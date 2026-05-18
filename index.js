@@ -29,6 +29,14 @@ async function run() {
     const db = client.db("idea-vault");
     const ideasCollection = db.collection("ideas");
 
+    // Get All Ideas
+    app.get("/ideas", async (req, res) => {
+      const cursor = ideasCollection.find();
+      const ideas = await cursor.toArray();
+      console.log(ideas);
+      res.send(ideas);
+    });
+
     // Create Idea
     app.post("/ideas", async (req, res) => {
       const ideaData = req.body;
