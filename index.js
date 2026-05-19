@@ -61,6 +61,20 @@ async function run() {
         { _id: new ObjectId(id) },
         { $set: ideaData },
       );
+      console.log(response);
+      res.send(response);
+    });
+
+    // Delete Idea
+    app.delete("/ideas/:id", async (req, res) => {
+      const { id } = req.params;
+
+      // Delete all comments related to the idea
+      await commentsCollection.deleteMany({ ideaId: id });
+
+      const response = await ideasCollection.deleteOne({
+        _id: new ObjectId(id),
+      });
       res.send(response);
     });
 
