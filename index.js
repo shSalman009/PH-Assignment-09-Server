@@ -2,7 +2,7 @@ const dns = require("node:dns/promises");
 dns.setServers(["1.1.1.1", "1.0.0.1"]);
 
 const express = require("express");
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const app = express();
 const cors = require("cors");
 const dotenv = require("dotenv");
@@ -33,8 +33,14 @@ async function run() {
     app.get("/ideas", async (req, res) => {
       const cursor = ideasCollection.find();
       const ideas = await cursor.toArray();
-      console.log(ideas);
       res.send(ideas);
+    });
+
+    // Get Single Idea
+    app.get("/ideas/:id", async (req, res) => {
+      const { id } = req.params;
+      const idea = await ideasCollection.findOne({ _id: new ObjectId(id) });
+      res.send(idea);
     });
 
     // Create Idea
