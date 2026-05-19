@@ -33,7 +33,6 @@ async function run() {
     // Get All Ideas
     app.get("/ideas", async (req, res) => {
       const params = req.query;
-
       const cursor = ideasCollection.find(params);
       const ideas = await cursor.toArray();
       res.send(ideas);
@@ -61,7 +60,6 @@ async function run() {
         { _id: new ObjectId(id) },
         { $set: ideaData },
       );
-      console.log(response);
       res.send(response);
     });
 
@@ -89,8 +87,16 @@ async function run() {
     // Create Comment
     app.post("/comments", async (req, res) => {
       const commentData = req.body;
-      console.log(commentData);
       const response = await commentsCollection.insertOne(commentData);
+
+      // Increment comment count in the related idea
+      if (response.acknowledged && response.insertedId) {
+        await ideasCollection.updateOne(
+          { _id: new ObjectId(commentData.ideaId) },
+          { $inc: { commentCount: 1 } },
+        );
+      }
+
       res.send(response);
     });
 
@@ -113,9 +119,19 @@ async function run() {
     // Delete Comment
     app.delete("/comments/:id", async (req, res) => {
       const { id } = req.params;
+      const { ideaId } = req.query;
       const response = await commentsCollection.deleteOne({
         _id: new ObjectId(id),
       });
+
+      // Decrement comment count in the related idea
+      if (response.deletedCount > 0) {
+        await ideasCollection.updateOne(
+          { _id: new ObjectId(ideaId) },
+          { $inc: { commentCount: -1 } },
+        );
+      }
+
       res.send(response);
     });
 
