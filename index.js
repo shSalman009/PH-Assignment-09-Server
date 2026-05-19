@@ -28,6 +28,7 @@ async function run() {
 
     const db = client.db("idea-vault");
     const ideasCollection = db.collection("ideas");
+    const commentsCollection = db.collection("comments");
 
     // Get All Ideas
     app.get("/ideas", async (req, res) => {
@@ -47,6 +48,47 @@ async function run() {
     app.post("/ideas", async (req, res) => {
       const ideaData = req.body;
       const response = await ideasCollection.insertOne(ideaData);
+      res.send(response);
+    });
+
+    // Get Comments
+    app.get("/comments", async (req, res) => {
+      const params = req.query;
+      const cursor = commentsCollection.find(params).sort({ createdAt: -1 });
+      const comments = await cursor.toArray();
+      res.send(comments);
+    });
+
+    // Create Comment
+    app.post("/comments", async (req, res) => {
+      const commentData = req.body;
+      console.log(commentData);
+      const response = await commentsCollection.insertOne(commentData);
+      res.send(response);
+    });
+
+    // Edit Comment
+    app.patch("/comments/:id", async (req, res) => {
+      const { id } = req.params;
+      const commentData = req.body;
+      const response = await commentsCollection.updateOne(
+        { _id: new ObjectId(id) },
+        {
+          $set: {
+            ...commentData,
+            edited: true,
+          },
+        },
+      );
+      res.send(response);
+    });
+
+    // Delete Comment
+    app.delete("/comments/:id", async (req, res) => {
+      const { id } = req.params;
+      const response = await commentsCollection.deleteOne({
+        _id: new ObjectId(id),
+      });
       res.send(response);
     });
 
