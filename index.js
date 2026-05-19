@@ -32,7 +32,9 @@ async function run() {
 
     // Get All Ideas
     app.get("/ideas", async (req, res) => {
-      const cursor = ideasCollection.find();
+      const params = req.query;
+
+      const cursor = ideasCollection.find(params);
       const ideas = await cursor.toArray();
       res.send(ideas);
     });
@@ -48,6 +50,17 @@ async function run() {
     app.post("/ideas", async (req, res) => {
       const ideaData = req.body;
       const response = await ideasCollection.insertOne(ideaData);
+      res.send(response);
+    });
+
+    // Edit Idea
+    app.patch("/ideas/:id", async (req, res) => {
+      const { id } = req.params;
+      const ideaData = req.body;
+      const response = await ideasCollection.updateOne(
+        { _id: new ObjectId(id) },
+        { $set: ideaData },
+      );
       res.send(response);
     });
 
