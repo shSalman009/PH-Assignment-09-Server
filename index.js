@@ -32,8 +32,15 @@ async function run() {
 
     // Get All Ideas
     app.get("/ideas", async (req, res) => {
-      const params = req.query;
-      const cursor = ideasCollection.find(params);
+      const query = req.query;
+      const cursor = ideasCollection.find(query);
+      const ideas = await cursor.toArray();
+      res.send(ideas);
+    });
+
+    // Get Trending Ideas
+    app.get("/ideas/trending", async (req, res) => {
+      const cursor = ideasCollection.find().limit(6);
       const ideas = await cursor.toArray();
       res.send(ideas);
     });
@@ -78,8 +85,8 @@ async function run() {
 
     // Get Comments
     app.get("/comments", async (req, res) => {
-      const params = req.query;
-      const cursor = commentsCollection.find(params).sort({ createdAt: -1 });
+      const query = req.query;
+      const cursor = commentsCollection.find(query).sort({ createdAt: -1 });
       const comments = await cursor.toArray();
       res.send(comments);
     });
