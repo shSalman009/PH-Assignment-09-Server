@@ -37,6 +37,9 @@ const verifyToken = async (req, res, next) => {
 
   try {
     const { payload } = await jwtVerify(token, JWKS);
+    if (payload) {
+      req.user = payload;
+    }
     next();
   } catch (error) {
     return res.status(403).json({ message: "Forbidden" });
@@ -109,6 +112,25 @@ async function run() {
     app.patch("/ideas/:id", verifyToken, async (req, res) => {
       const { id } = req.params;
       const ideaData = req.body;
+
+      const existingIdea = await ideasCollection.findOne({
+        _id: new ObjectId(id),
+      });
+
+      if (!existingIdea) {
+        return res.status(404).send({ message: "Idea not found" });
+      }
+      if (existingIdea.authorEmail !== req.user.email) {
+        return res.status(403).send({ message: "Unauthorized" });
+      }
+
+      if (ideaData.title && ideaData.title !== existingIdea.title) {
+        await commentsCollection.updateMany(
+          { ideaId: id },
+          { $set: { ideaTitle: ideaData.title } },
+        );
+      }
+
       const response = await ideasCollection.updateOne(
         { _id: new ObjectId(id) },
         { $set: ideaData },
