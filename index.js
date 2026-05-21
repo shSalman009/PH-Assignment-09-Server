@@ -53,7 +53,19 @@ async function run() {
 
     // Get All Ideas
     app.get("/ideas", async (req, res) => {
-      const cursor = ideasCollection.find();
+      let cursor;
+      const { title } = req.query;
+      if (title) {
+        cursor = ideasCollection.find({
+          title: {
+            $regex: title,
+            $options: "i",
+          },
+        });
+      } else {
+        cursor = ideasCollection.find();
+      }
+
       const ideas = await cursor.toArray();
       res.send(ideas);
     });
