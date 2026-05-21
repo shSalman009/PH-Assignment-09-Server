@@ -53,20 +53,23 @@ async function run() {
 
     // Get All Ideas
     app.get("/ideas", async (req, res) => {
-      let cursor;
-      const { title } = req.query;
-      if (title) {
-        cursor = ideasCollection.find({
-          title: {
-            $regex: title,
-            $options: "i",
-          },
-        });
-      } else {
-        cursor = ideasCollection.find();
-      }
+      const { title, category } = req.query;
+      let query = {};
 
-      const ideas = await cursor.toArray();
+      if (title) {
+        query.title = {
+          $regex: title,
+          $options: "i",
+        };
+      }
+      if (category) {
+        query.category = {
+          $regex: category,
+          $options: "i",
+        };
+      }
+      const ideas = await ideasCollection.find(query).toArray();
+      console.log(ideas);
       res.send(ideas);
     });
 
