@@ -45,7 +45,7 @@ const verifyToken = async (req, res, next) => {
 
 async function run() {
   try {
-    await client.connect();
+    // await client.connect();
 
     const db = client.db("idea-vault");
     const ideasCollection = db.collection("ideas");
@@ -116,8 +116,18 @@ async function run() {
 
     // Get Comments (Private)
     app.get("/comments", verifyToken, async (req, res) => {
-      const query = req.query;
+      const query = {};
+
+      if (req.query.ideaId) {
+        query.ideaId = req.query.ideaId;
+      }
+
+      if (req.query.userId) {
+        query.userId = req.query.userId;
+      }
+
       const cursor = commentsCollection.find(query).sort({ createdAt: -1 });
+
       const comments = await cursor.toArray();
       res.send(comments);
     });
@@ -173,7 +183,7 @@ async function run() {
       res.send(response);
     });
 
-    await client.db("admin").command({ ping: 1 });
+    // await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!",
     );
