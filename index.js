@@ -53,6 +53,7 @@ async function run() {
     const db = client.db("idea-vault");
     const ideasCollection = db.collection("ideas");
     const commentsCollection = db.collection("comments");
+    const bookmarksCollection = db.collection("bookmarks");
 
     // Get All Ideas
     app.get("/ideas", async (req, res) => {
@@ -72,7 +73,6 @@ async function run() {
         };
       }
       const ideas = await ideasCollection.find(query).toArray();
-      console.log(ideas);
       res.send(ideas);
     });
 
@@ -218,6 +218,63 @@ async function run() {
       }
 
       res.send(response);
+    });
+
+    // BOOKMARKS API
+
+    // Get Bookmarks
+    app.get("/bookmarks", verifyToken, async (req, res) => {
+      if (!req.user) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const bookmarks = await bookmarksCollection
+        .find({ userId: req.user.id })
+        .toArray();
+      console.log(bookmarks);
+      res.send(bookmarks);
+    });
+
+    // Bookmark toggle
+    app.post("/bookmarks/toggle", verifyToken, async (req, res) => {
+      const { ideaId } = req.body;
+      const { id: userId } = req.user;
+      console.log("id's = ", userId, ideaId);
+      const existing = await bookmarksCollection.findOne({ userId, ideaId });
+
+      if (existing) {
+        const response = await bookmarksCollection.deleteOne({
+          userId,
+          ideaId,
+        });
+        console.log("esisting", response);
+        // Decrement bookmark count in the related idea
+        if (response.deletedCount > 0) {
+          await ideasCollection.updateOne(
+            { _id: new ObjectId(ideaId) },
+            { $inc: { bookmarkCount: -1 } },
+          );
+        }
+        return res.send({ bookmarked: false });
+      } else {
+        // Adding bookmark
+        const response = await bookmarksCollection.insertOne({
+          userId,
+          ideaId,
+          createdAt: new Date(),
+        });
+        console.log("not existing", response);
+
+        // Increment bookmark count in the related idea
+        if (response.acknowledged && response.insertedId) {
+          await ideasCollection.updateOne(
+            { _id: new ObjectId(ideaId) },
+            { $inc: { bookmarkCount: 1 } },
+          );
+        }
+
+        return res.send({ bookmarked: true });
+      }
     });
 
     // await client.db("admin").command({ ping: 1 });
